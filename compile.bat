@@ -1,0 +1,1 @@
+c:\genesis\sgdk\bin\make.exe -f c:\genesis\sgdk\makefile.gen
