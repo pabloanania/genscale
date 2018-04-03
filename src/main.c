@@ -1,7 +1,7 @@
 #include <genesis.h>
 
 // CONSTANTES
-#define TILE_SIZE       16
+#define IMG_SIZE       16
 #define SCAN_SUB_SIZE   10
 #define SCREEN_SIZE_X   128
 #define SCREEN_SIZE_Y   128
@@ -21,7 +21,7 @@ int main()
 {
     // Inicializa, desactiva interrupts y luego reactiva. OJO! Ver en sample\sprites que desactiva los interrupts al dibujar el fondo
     SYS_disableInts();
-    VDP_setScreenWidth320();
+    VDP_setScreenWidth256();
     SYS_enableInts();
     JOY_setEventHandler(joyEvent);
 
