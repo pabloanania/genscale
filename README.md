@@ -8,3 +8,4 @@
    * Cuando draw_x llega al limite de SCREEN_SIZE_X, suma un step en scan_y, suma 1 en draw_y, resetea scan_x y resetea draw_x
    * Vuelve a iniciar el proceso de buscar los pixeles step por step
    * Finaliza cuando draw_y supera a SCREEN_Y
+   * PRUEBA!
