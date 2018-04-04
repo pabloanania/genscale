@@ -1,7 +1,5 @@
 # TO DO:
-* Hacer un algoritmo que dibuje el mismo pixel en pantalla a full screen hasta encontrar la mejor performance
-  * Ver qué hace disable y enable interrupts
-  * Hacer movimiento scrolling de pantalla para ver si el framerate es el que dice ser
+* Imprimir en pantalla variables necesarias
 * Crear funcion scan(), lo que hace es scan_x y scan_y lo divide por SCAN_SUB_SIZE y ese numero entero es el que toma para obtener el pixel de referencia. Seria mejor en lugar de dividir, solo tomar los primeros X digitos. Ver bit shifting
 * Algoritmo de dibujo:
  * Las teclas deben aumentar scan_step
