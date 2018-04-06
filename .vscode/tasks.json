@@ -4,12 +4,16 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Compilar",
+            "label": "SGDK Compile",
             "type": "shell",
             "windows": {
                 "command": ".\\compile.cmd"
             },
-            "group": "build",
+            "promptOnClose": false,
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "presentation": {
                 "echo": true,
                 "reveal": "always",

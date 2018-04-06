@@ -1,5 +1,4 @@
 # TO DO:
-* Imprimir en pantalla variables necesarias
 * Crear funcion scan(), lo que hace es scan_x y scan_y lo divide por SCAN_SUB_SIZE y ese numero entero es el que toma para obtener el pixel de referencia. Seria mejor en lugar de dividir, solo tomar los primeros X digitos. Ver bit shifting
 * Algoritmo de dibujo:
  * Las teclas deben aumentar scan_step
