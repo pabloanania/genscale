@@ -14,6 +14,7 @@
 static void joyCallback(u16 joy, u16 changed, u16 state);
 static void vIntCallback();
 void drawCanvas();
+void drawBufferLine();
 void drawTileLine();
 void getPixelFromImg();
 
@@ -52,6 +53,7 @@ char integerConverter[5];
 u8 img_pixel;
 _Bool exit;
 _Bool tile_line_exit;
+_Bool draw_tile_line_exit;
 
 int main()
 {
@@ -112,8 +114,7 @@ void drawCanvas(){
     }
 }
 
-void drawTileLine(){
-    current_tile_x = 0;
+void drawBufferLine(){
     current_tile_y = 0;
     tile_line_exit = FALSE;
 
@@ -136,3 +137,18 @@ void drawTileLine(){
 
     VDP_loadTileData((const u32*) tile_line_buffer, TILE_USERINDEX+tile_id, SCREEN_SIZE_X_TILES, 0);
 }
+
+void drawTileLine(){
+    current_tile_x = 0;
+    draw_tile_line_exit = FALSE;
+    
+    while (!draw_tile_exit){
+        tile_line_buffer[draw_x_tile][current_tile_y] <<= 4;
+        tile_line_buffer[draw_x_tile][current_tile_y] += 5;
+            
+        // Avanza en X de a un pixel
+        current_tile_x += 1;
+        if (current_x_tile == TILE_SIZE_PX)
+            draw_tile_line_exit = TRUE;
+    }
+    }
