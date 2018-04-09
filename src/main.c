@@ -16,7 +16,6 @@ static void vIntCallback();
 void drawCanvas();
 void drawBufferLine();
 void drawTileLine();
-void getPixelFromImg();
 
 // VARIABLES GLOBALES
 u16 scan_x;
@@ -101,10 +100,12 @@ void drawCanvas(){
     draw_y_tile = 0;
     draw_x_px = 0;
     draw_y_px = 0;
+    current_tile_x = 0;
+    current_tile_y = 0;
     exit = FALSE;
 
     while(!exit){
-        drawTileLine();
+        drawBufferLine();
 
         // Avanza en Y
         draw_y_tile += 1;
@@ -119,10 +120,13 @@ void drawBufferLine(){
     tile_line_exit = FALSE;
 
     while (!tile_line_exit){
+        /*
         if (!buttonAPressed)
             tile_line_buffer[draw_x_tile][current_tile_y] = 0x12345678;
         else
             tile_line_buffer[draw_x_tile][current_tile_y] = 0x87654321;
+        */
+        drawTileLine();
         
         // Avanza en X de a un tile, Y de a un reglon de px
         draw_x_tile += 1;
@@ -135,20 +139,20 @@ void drawBufferLine(){
             tile_line_exit = TRUE;
     }
 
-    VDP_loadTileData((const u32*) tile_line_buffer, TILE_USERINDEX+tile_id, SCREEN_SIZE_X_TILES, 0);
+    VDP_loadTileData((const u32*) tile_line_buffer, TILE_USERINDEX+tile_id, SCREEN_SIZE_X_TILES, 1);
 }
 
 void drawTileLine(){
     current_tile_x = 0;
     draw_tile_line_exit = FALSE;
     
-    while (!draw_tile_exit){
+    while (!draw_tile_line_exit){
         tile_line_buffer[draw_x_tile][current_tile_y] <<= 4;
         tile_line_buffer[draw_x_tile][current_tile_y] += 5;
             
         // Avanza en X de a un pixel
         current_tile_x += 1;
-        if (current_x_tile == TILE_SIZE_PX)
+        if (current_tile_x == TILE_SIZE_PX)
             draw_tile_line_exit = TRUE;
     }
-    }
+}
