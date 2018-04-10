@@ -48,6 +48,7 @@ u16 tile_id;
 u16 aux;
 u16 aux_x;
 u16 aux_y;
+u16 *aux_p;
 char integerConverter[5];
 u8 img_pixel;
 _Bool exit;
@@ -121,11 +122,32 @@ void drawBufferLine(){
 
     while (!tile_line_exit){
         /*
+        // Setear toda la linea junta vuela
         if (!buttonAPressed)
             tile_line_buffer[draw_x_tile][current_tile_y] = 0x12345678;
         else
             tile_line_buffer[draw_x_tile][current_tile_y] = 0x87654321;
+
+        // Esto en un momento funcionó lento pero mejor que drawTileLine. Ahora no funca
+        aux_p = tile_line_buffer[draw_x_tile][current_tile_y];
+        *aux_p = 1;
+        *aux_p <<= 4;
+        *aux_p += 2;
+        *aux_p <<= 4;
+        *aux_p += 3;
+        *aux_p <<= 4;
+        *aux_p += 4;
+        *aux_p <<= 4;
+        *aux_p += 5;
+        *aux_p <<= 4;
+        *aux_p += 6;
+        *aux_p <<= 4;
+        *aux_p += 7;
+        *aux_p <<= 4;
+        *aux_p += 8;
         */
+
+        // Método más prolijo de dibujar un tile
         drawTileLine();
         
         // Avanza en X de a un tile, Y de a un reglon de px
