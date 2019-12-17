@@ -1,59 +1,40 @@
 #include <genesis.h>
 
 // CONSTANTES
-#define IMG_SIZE_SIDE           8
-#define TILE_COLOR_QTY          16
-#define TILE_SIZE_PX            8
-#define SCAN_SHIFTING           1
-#define SCREEN_SIZE_X           128
-#define SCREEN_SIZE_Y           72
-#define SCREEN_SIZE_X_TILES     16
-#define SCREEN_SIZE_Y_TILES     9
+#define IMG_SIZE_SIDE 8
+#define TILE_COLOR_QTY 16
+#define TILE_SIZE_PX 8
+#define SCAN_SHIFTING 1
+#define SCREEN_SIZE_X 32
+#define SCREEN_SIZE_Y 32
+#define SCREEN_SIZE_X_TILES 4
+#define SCREEN_SIZE_Y_TILES 4
+//#define SCREEN_SIZE_X 256
+//#define SCREEN_SIZE_Y 200
+//#define SCREEN_SIZE_X_TILES 32
+//#define SCREEN_SIZE_Y_TILES 25
 
 // PROTOTIPOS
 static void joyCallback(u16 joy, u16 changed, u16 state);
 static void vIntCallback();
-void drawCanvas();
-void drawBufferLine();
-void drawTileLine();
+void drawStrip(u8 h_index);
+void scrollMap();
 
 // VARIABLES GLOBALES
-u16 scan_x;
-u16 scan_y;
-u16 scan_step;
-u16 draw_x_px;
-u16 draw_y_px;
-u16 draw_x_tile;
-u16 draw_y_tile;
-u16 current_tile_x;
-u16 current_tile_y;
-u32 tile_line_buffer[SCREEN_SIZE_X_TILES][TILE_SIZE_PX];
-_Bool buttonAPressed = FALSE;
-_Bool buttonBPressed = FALSE;
-_Bool buttonCPressed = FALSE;
-_Bool buttonStartPressed = FALSE;
 u16 img_orig[8][8] = {
-    {5,5,5,5,5,5,5,5},
-    {5,9,2,2,2,2,2,5},
-    {5,9,9,2,2,2,2,5},
-    {5,9,9,9,2,2,2,5},
-    {5,9,9,9,9,2,2,5},
-    {5,9,9,9,9,9,2,5},
-    {5,9,9,9,9,9,9,5},
-    {5,5,5,5,5,5,5,5}
-};
+    {5, 5, 5, 5, 5, 5, 5, 5},
+    {5, 9, 2, 2, 2, 2, 2, 5},
+    {5, 9, 9, 2, 2, 2, 2, 5},
+    {5, 9, 9, 9, 2, 2, 2, 5},
+    {5, 9, 9, 9, 9, 2, 2, 5},
+    {5, 9, 9, 9, 9, 9, 2, 5},
+    {5, 9, 9, 9, 9, 9, 9, 5},
+    {5, 5, 5, 5, 5, 5, 5, 5}};
+u8 tile_strip[TILE_SIZE_PX][SCREEN_SIZE_Y];
+s16 planX = 0;
+s16 planY = 0;
 
 // VARIABLES GLOBALES DE PRUEBA
-u16 tile_id;
-u16 aux;
-u16 aux_x;
-u16 aux_y;
-u16 *aux_p;
-char integerConverter[5];
-u8 img_pixel;
-_Bool exit;
-_Bool tile_line_exit;
-_Bool draw_tile_line_exit;
 
 int main()
 {
@@ -64,7 +45,10 @@ int main()
     SYS_setVIntCallback(&vIntCallback);
     SYS_enableInts();
 
-    while(TRUE)
+    // Posiciona los tiles en donde corresponde
+    VDP_fillTileMapRectInc(PLAN_B, TILE_ATTR_FULL(PAL3, 0, 0, 0, TILE_USERINDEX), 0, 0, SCREEN_SIZE_X_TILES, SCREEN_SIZE_Y_TILES);
+
+    while (TRUE)
     {
         VDP_waitVSync();
     }
@@ -72,109 +56,93 @@ int main()
     return 0;
 }
 
-static void vIntCallback(){
-    drawCanvas();
+static void vIntCallback()
+{
+    scrollMap();
 
-    // Llena la screen con todos los tiles dibujados previamente
-    VDP_fillTileMapRectInc(PLAN_B, TILE_ATTR_FULL(PAL3, 0, 0, 0, TILE_USERINDEX), 0, 0, SCREEN_SIZE_X_TILES, SCREEN_SIZE_Y_TILES);
+    drawStrip(0);
 
-    uintToStr(scan_step, integerConverter, 5);
-    VDP_drawTextBG(PLAN_A, integerConverter, 1, 0);
+    // Dibuja datos
+    //uintToStr(scan_step, integerConverter, 5);
+    //VDP_drawTextBG(PLAN_A, integerConverter, 1, 0);
+
+    // Dibuja FPS
     VDP_showFPS(1);
 }
 
 static void joyCallback(u16 joy, u16 changed, u16 state)
 {
     if (state & BUTTON_UP)
-        scan_step+=1;
+        planY = planY + 1;
 
     if (state & BUTTON_DOWN)
-        scan_step-=1;
-    
-    if (state & BUTTON_A)
-        buttonAPressed=TRUE;
+        planY = planY - 1;
+
+    if (state & BUTTON_LEFT)
+        planX = planX - 1;
+
+    if (state & BUTTON_RIGHT)
+        planX = planX + 1;
 }
 
-void drawCanvas(){
-    tile_id = 0;
-    draw_x_tile = 0;
-    draw_y_tile = 0;
-    draw_x_px = 0;
-    draw_y_px = 0;
-    current_tile_x = 0;
-    current_tile_y = 0;
-    exit = FALSE;
-
-    while(!exit){
-        drawBufferLine();
-
-        // Avanza en Y
-        draw_y_tile += 1;
-        tile_id += SCREEN_SIZE_X_TILES;
-        if (draw_y_tile > SCREEN_SIZE_Y_TILES)
-            exit = TRUE;
-    }
+void scrollMap()
+{
+    VDP_setHorizontalScroll(PLAN_B, planX);
+    VDP_setVerticalScroll(PLAN_B, planY);
 }
 
-void drawBufferLine(){
-    current_tile_y = 0;
-    tile_line_exit = FALSE;
+void drawStrip(u8 h_index)
+{
+    // TEST: Esto agilizaria el procesamiento?
+    u8 px0 = img_orig[h_index][0];
+    u8 px1 = img_orig[h_index][1];
+    u8 px2 = img_orig[h_index][2];
+    u8 px3 = img_orig[h_index][3];
+    u8 px4 = img_orig[h_index][4];
+    u8 px5 = img_orig[h_index][5];
+    u8 px6 = img_orig[h_index][6];
+    u8 px7 = img_orig[h_index][7];
 
-    while (!tile_line_exit){
-        /*
-        // Setear toda la linea junta vuela
-        if (!buttonAPressed)
-            tile_line_buffer[draw_x_tile][current_tile_y] = 0x12345678;
-        else
-            tile_line_buffer[draw_x_tile][current_tile_y] = 0x87654321;
+    // *** MACRO: DIBUJA STRIP ***
+    tile_strip[h_index][0] = px0;
+    tile_strip[h_index][1] = px0;
+    tile_strip[h_index][2] = px0;
+    tile_strip[h_index][3] = px0;
+    tile_strip[h_index][4] = px0;
+    tile_strip[h_index][5] = px0;
+    tile_strip[h_index][6] = px0;
+    tile_strip[h_index][7] = px0;
 
-        // Esto en un momento funcionó lento pero mejor que drawTileLine. Ahora no funca
-        aux_p = tile_line_buffer[draw_x_tile][current_tile_y];
-        *aux_p = 1;
-        *aux_p <<= 4;
-        *aux_p += 2;
-        *aux_p <<= 4;
-        *aux_p += 3;
-        *aux_p <<= 4;
-        *aux_p += 4;
-        *aux_p <<= 4;
-        *aux_p += 5;
-        *aux_p <<= 4;
-        *aux_p += 6;
-        *aux_p <<= 4;
-        *aux_p += 7;
-        *aux_p <<= 4;
-        *aux_p += 8;
-        */
+    tile_strip[h_index][8] = px2;
+    tile_strip[h_index][9] = px2;
+    tile_strip[h_index][10] = px2;
+    tile_strip[h_index][11] = px2;
+    tile_strip[h_index][12] = px2;
+    tile_strip[h_index][13] = px2;
+    tile_strip[h_index][14] = px2;
+    tile_strip[h_index][15] = px2;
 
-        // Método más prolijo de dibujar un tile
-        drawTileLine();
-        
-        // Avanza en X de a un tile, Y de a un reglon de px
-        draw_x_tile += 1;
-        if (draw_x_tile == SCREEN_SIZE_X_TILES){
-            draw_x_tile = 0;
-            current_tile_y +=1;
-        }
+    tile_strip[h_index][16] = px4;
+    tile_strip[h_index][17] = px4;
+    tile_strip[h_index][18] = px4;
+    tile_strip[h_index][19] = px4;
+    tile_strip[h_index][20] = px4;
+    tile_strip[h_index][21] = px4;
+    tile_strip[h_index][22] = px4;
+    tile_strip[h_index][23] = px4;
 
-        if (current_tile_y == TILE_SIZE_PX)
-            tile_line_exit = TRUE;
-    }
+    tile_strip[h_index][24] = px6;
+    tile_strip[h_index][25] = px6;
+    tile_strip[h_index][26] = px6;
+    tile_strip[h_index][27] = px6;
+    tile_strip[h_index][28] = px6;
+    tile_strip[h_index][29] = px6;
+    tile_strip[h_index][30] = px6;
+    tile_strip[h_index][31] = px6;
 
-    VDP_loadTileData((const u32*) tile_line_buffer, TILE_USERINDEX+tile_id, SCREEN_SIZE_X_TILES, 1);
-}
-
-void drawTileLine(){
-    current_tile_x = 0;
-    draw_tile_line_exit = FALSE;
-    
-    while (!draw_tile_line_exit){
-        tile_line_buffer[draw_x_tile][current_tile_y] <<= 4;
-        tile_line_buffer[draw_x_tile][current_tile_y] += 5;
-            
-        // Avanza en X de a un pixel
-        current_tile_x += 1;
-        if (current_tile_x == TILE_SIZE_PX)
-            draw_tile_line_exit = TRUE;
-    }
+    // *** MACRO: CARGA EN VDP ***
+    VDP_loadTileData((const u32 *)tile_strip[0][0], TILE_USERINDEX, 1, DMA);
+    VDP_loadTileData((const u32 *)tile_strip[0][TILE_SIZE_PX], TILE_USERINDEX + SCREEN_SIZE_X_TILES, 1, DMA);
+    VDP_loadTileData((const u32 *)tile_strip[0][2 * TILE_SIZE_PX], TILE_USERINDEX + 2 * SCREEN_SIZE_X_TILES, 1, DMA);
+    VDP_loadTileData((const u32 *)tile_strip[0][3 * TILE_SIZE_PX], TILE_USERINDEX + 3 * SCREEN_SIZE_X_TILES, 1, DMA);
 }
