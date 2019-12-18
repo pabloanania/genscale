@@ -1,4 +1,12 @@
+/*
+TO DO:
+
+*/
+
 #include <genesis.h>
+#include "KDebug.h"
+#include "tools.h"
+#include "timer.h"
 
 // CONSTANTES
 #define IMG_SIZE_SIDE 8
@@ -15,10 +23,11 @@
 //#define SCREEN_SIZE_Y_TILES 25
 
 // PROTOTIPOS
-static void joyCallback(u16 joy, u16 changed, u16 state);
-static void vIntCallback();
-void drawStrip(u8 h_index);
+void mainLoop();
+void input();
 void scrollMap();
+void drawStrip(u8 h_index_px, u16 *strip);
+void loadTiles(u8 h_index_tile);
 
 // VARIABLES GLOBALES
 u16 img_orig[8][8] = {
@@ -30,7 +39,7 @@ u16 img_orig[8][8] = {
     {5, 9, 9, 9, 9, 9, 2, 5},
     {5, 9, 9, 9, 9, 9, 9, 5},
     {5, 5, 5, 5, 5, 5, 5, 5}};
-u8 tile_strip[TILE_SIZE_PX][SCREEN_SIZE_Y];
+u16 tile_strip[SCREEN_SIZE_Y][TILE_SIZE_PX];
 s16 planX = 0;
 s16 planY = 0;
 
@@ -41,8 +50,6 @@ int main()
     // Inicializa, desactiva interrupts y luego reactiva. Siempre hay que desactivar interrupts al llamar a VDP
     SYS_disableInts();
     VDP_setScreenWidth256();
-    JOY_setEventHandler(&joyCallback);
-    SYS_setVIntCallback(&vIntCallback);
     SYS_enableInts();
 
     // Posiciona los tiles en donde corresponde
@@ -50,17 +57,33 @@ int main()
 
     while (TRUE)
     {
+        mainLoop();
+
         VDP_waitVSync();
     }
 
     return 0;
 }
 
-static void vIntCallback()
+void mainLoop()
 {
+    input();
+
     scrollMap();
 
-    drawStrip(0);
+    drawStrip(0, img_orig[0]);
+    drawStrip(1, img_orig[1]);
+    drawStrip(2, img_orig[2]);
+    drawStrip(3, img_orig[3]);
+    drawStrip(4, img_orig[4]);
+    drawStrip(5, img_orig[5]);
+    drawStrip(6, img_orig[6]);
+    drawStrip(7, img_orig[7]);
+
+    loadTiles(0);
+    loadTiles(1);
+    loadTiles(2);
+    loadTiles(3);
 
     // Dibuja datos
     //uintToStr(scan_step, integerConverter, 5);
@@ -70,19 +93,19 @@ static void vIntCallback()
     VDP_showFPS(1);
 }
 
-static void joyCallback(u16 joy, u16 changed, u16 state)
+void input()
 {
-    if (state & BUTTON_UP)
-        planY = planY + 1;
+    u16 value = JOY_readJoypad(JOY_1);
 
-    if (state & BUTTON_DOWN)
-        planY = planY - 1;
+    if (value & BUTTON_UP)
+        planY++;
+    else if (value & BUTTON_DOWN)
+        planY--;
 
-    if (state & BUTTON_LEFT)
-        planX = planX - 1;
-
-    if (state & BUTTON_RIGHT)
-        planX = planX + 1;
+    if (value & BUTTON_RIGHT)
+        planX++;
+    else if (value & BUTTON_LEFT)
+        planX--;
 }
 
 void scrollMap()
@@ -91,58 +114,61 @@ void scrollMap()
     VDP_setVerticalScroll(PLAN_B, planY);
 }
 
-void drawStrip(u8 h_index)
+void drawStrip(u8 h_index_px, u16 *strip)
 {
     // TEST: Esto agilizaria el procesamiento?
-    u8 px0 = img_orig[h_index][0];
-    u8 px1 = img_orig[h_index][1];
-    u8 px2 = img_orig[h_index][2];
-    u8 px3 = img_orig[h_index][3];
-    u8 px4 = img_orig[h_index][4];
-    u8 px5 = img_orig[h_index][5];
-    u8 px6 = img_orig[h_index][6];
-    u8 px7 = img_orig[h_index][7];
+    u8 px0 = strip[0];
+    u8 px1 = strip[1];
+    u8 px2 = strip[2];
+    u8 px3 = strip[3];
+    u8 px4 = strip[4];
+    u8 px5 = strip[5];
+    u8 px6 = strip[6];
+    u8 px7 = strip[7];
 
     // *** MACRO: DIBUJA STRIP ***
-    tile_strip[h_index][0] = px0;
-    tile_strip[h_index][1] = px0;
-    tile_strip[h_index][2] = px0;
-    tile_strip[h_index][3] = px0;
-    tile_strip[h_index][4] = px0;
-    tile_strip[h_index][5] = px0;
-    tile_strip[h_index][6] = px0;
-    tile_strip[h_index][7] = px0;
+    tile_strip[0][h_index_px] = px0;
+    tile_strip[1][h_index_px] = px0;
+    tile_strip[2][h_index_px] = px0;
+    tile_strip[3][h_index_px] = px0;
+    tile_strip[4][h_index_px] = px1;
+    tile_strip[5][h_index_px] = px1;
+    tile_strip[6][h_index_px] = px1;
+    tile_strip[7][h_index_px] = px1;
 
-    tile_strip[h_index][8] = px2;
-    tile_strip[h_index][9] = px2;
-    tile_strip[h_index][10] = px2;
-    tile_strip[h_index][11] = px2;
-    tile_strip[h_index][12] = px2;
-    tile_strip[h_index][13] = px2;
-    tile_strip[h_index][14] = px2;
-    tile_strip[h_index][15] = px2;
+    tile_strip[8][h_index_px] = px2;
+    tile_strip[9][h_index_px] = px2;
+    tile_strip[10][h_index_px] = px2;
+    tile_strip[11][h_index_px] = px2;
+    tile_strip[12][h_index_px] = px3;
+    tile_strip[13][h_index_px] = px3;
+    tile_strip[14][h_index_px] = px3;
+    tile_strip[15][h_index_px] = px3;
 
-    tile_strip[h_index][16] = px4;
-    tile_strip[h_index][17] = px4;
-    tile_strip[h_index][18] = px4;
-    tile_strip[h_index][19] = px4;
-    tile_strip[h_index][20] = px4;
-    tile_strip[h_index][21] = px4;
-    tile_strip[h_index][22] = px4;
-    tile_strip[h_index][23] = px4;
+    tile_strip[16][h_index_px] = px4;
+    tile_strip[17][h_index_px] = px4;
+    tile_strip[18][h_index_px] = px4;
+    tile_strip[19][h_index_px] = px4;
+    tile_strip[20][h_index_px] = px5;
+    tile_strip[21][h_index_px] = px5;
+    tile_strip[22][h_index_px] = px5;
+    tile_strip[23][h_index_px] = px5;
 
-    tile_strip[h_index][24] = px6;
-    tile_strip[h_index][25] = px6;
-    tile_strip[h_index][26] = px6;
-    tile_strip[h_index][27] = px6;
-    tile_strip[h_index][28] = px6;
-    tile_strip[h_index][29] = px6;
-    tile_strip[h_index][30] = px6;
-    tile_strip[h_index][31] = px6;
+    tile_strip[24][h_index_px] = px6;
+    tile_strip[25][h_index_px] = px6;
+    tile_strip[26][h_index_px] = px6;
+    tile_strip[27][h_index_px] = px6;
+    tile_strip[28][h_index_px] = px7;
+    tile_strip[29][h_index_px] = px7;
+    tile_strip[30][h_index_px] = px7;
+    tile_strip[31][h_index_px] = px7;
+}
 
+void loadTiles(u8 h_index_tile)
+{
     // *** MACRO: CARGA EN VDP ***
-    VDP_loadTileData((const u32 *)tile_strip[0][0], TILE_USERINDEX, 1, DMA);
-    VDP_loadTileData((const u32 *)tile_strip[0][TILE_SIZE_PX], TILE_USERINDEX + SCREEN_SIZE_X_TILES, 1, DMA);
-    VDP_loadTileData((const u32 *)tile_strip[0][2 * TILE_SIZE_PX], TILE_USERINDEX + 2 * SCREEN_SIZE_X_TILES, 1, DMA);
-    VDP_loadTileData((const u32 *)tile_strip[0][3 * TILE_SIZE_PX], TILE_USERINDEX + 3 * SCREEN_SIZE_X_TILES, 1, DMA);
+    VDP_loadTileData((const u32 *)tile_strip[0], TILE_USERINDEX + h_index_tile, 1, DMA);
+    VDP_loadTileData((const u32 *)tile_strip[TILE_SIZE_PX], TILE_USERINDEX + h_index_tile + SCREEN_SIZE_X_TILES, 1, DMA);
+    VDP_loadTileData((const u32 *)tile_strip[2 * TILE_SIZE_PX], TILE_USERINDEX + h_index_tile + 2 * SCREEN_SIZE_X_TILES, 1, DMA);
+    VDP_loadTileData((const u32 *)tile_strip[3 * TILE_SIZE_PX], TILE_USERINDEX + h_index_tile + 3 * SCREEN_SIZE_X_TILES, 1, DMA);
 }
