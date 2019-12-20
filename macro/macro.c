@@ -1,110 +1,3 @@
-/*
-TO DO:
-* Version 128*160
-*
-*/
-
-#include <genesis.h>
-#include "KDebug.h"
-#include "tools.h"
-#include "timer.h"
-
-// CONSTANTES
-#define TILE_COLOR_QTY 16
-#define TILE_SIZE_PX 8
-#define SCAN_SHIFTING 1
-#define SCREEN_SIZE_X 128
-#define SCREEN_SIZE_Y 128
-#define SCREEN_SIZE_X_TILES 16
-#define SCREEN_SIZE_Y_TILES 16
-//#define SCREEN_SIZE_X 256
-//#define SCREEN_SIZE_Y 200
-//#define SCREEN_SIZE_X_TILES 32
-//#define SCREEN_SIZE_Y_TILES 25
-
-// PROTOTIPOS
-void mainLoop();
-void input();
-void clearStrip();
-void scrollMap();
-void drawScreen();
-void drawStrip(u8 h_index_px, u16 *strip);
-void loadTiles(u8 h_index_tile);
-
-// VARIABLES GLOBALES
-u16 img_orig[8][8] = {
-    {5, 5, 5, 5, 5, 5, 5, 5},
-    {5, 9, 2, 2, 2, 2, 2, 5},
-    {5, 9, 9, 2, 2, 2, 2, 5},
-    {5, 9, 9, 9, 2, 2, 2, 5},
-    {5, 9, 9, 9, 9, 2, 2, 5},
-    {5, 9, 9, 9, 9, 9, 2, 5},
-    {5, 9, 9, 9, 9, 9, 9, 5},
-    {5, 5, 5, 5, 5, 5, 5, 5}};
-u32 tile_strip[SCREEN_SIZE_Y];
-s16 planX = 0;
-s16 planY = 0;
-
-// VARIABLES GLOBALES DE PRUEBA
-
-int main()
-{
-    // Inicializa, desactiva interrupts y luego reactiva. Siempre hay que desactivar interrupts al llamar a VDP
-    SYS_disableInts();
-    VDP_setScreenWidth256();
-    SYS_enableInts();
-
-    // Posiciona los tiles en donde corresponde
-    VDP_fillTileMapRectInc(PLAN_B, TILE_ATTR_FULL(PAL3, 0, 0, 0, TILE_USERINDEX), 0, 0, SCREEN_SIZE_X_TILES, SCREEN_SIZE_Y_TILES);
-
-    while (TRUE)
-    {
-        mainLoop();
-
-        VDP_waitVSync();
-    }
-
-    return 0;
-}
-
-void mainLoop()
-{
-    input();
-
-    scrollMap();
-
-    drawScreen();
-
-    // Dibuja FPS
-    VDP_showFPS(1);
-}
-
-void input()
-{
-    u16 value = JOY_readJoypad(JOY_1);
-
-    if (value & BUTTON_UP)
-        planY++;
-    else if (value & BUTTON_DOWN)
-        planY--;
-
-    if (value & BUTTON_RIGHT)
-        planX++;
-    else if (value & BUTTON_LEFT)
-        planX--;
-}
-
-void scrollMap()
-{
-    VDP_setHorizontalScroll(PLAN_B, planX);
-    VDP_setVerticalScroll(PLAN_B, planY);
-}
-
-void clearStrip() {
-	for (int i=0; i<SCREEN_SIZE_Y; i++)
-		tile_strip[i] = 0;
-}
-
 //***** START MACRO GENERATED CODE *****
 
 void drawScreen()
@@ -298,7 +191,7 @@ void drawStrip(u8 h_index_px, u16 *strip)
     u8 px5 = strip[5];
     u8 px6 = strip[6];
     u8 px7 = strip[7];
-
+    
     tile_strip[0] <<= 4; tile_strip[0] += px0;
     tile_strip[1] <<= 4; tile_strip[1] += px0;
     tile_strip[2] <<= 4; tile_strip[2] += px0;
